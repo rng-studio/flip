@@ -1,13 +1,13 @@
-# flip
+# Flip
 
-> Client side library for Flip game
+> Flip is a
 
-[![NPM](https://img.shields.io/npm/v/flip.svg)](https://www.npmjs.com/package/flip) [![JavaScript Style Guide](https://img.shields.io/badge/code_style-standard-brightgreen.svg)](https://standardjs.com)
+[![NPM](https://img.shields.io/npm/v/@rpmstudios/flip.svg)](https://www.npmjs.com/package/flip) [![JavaScript Style Guide](https://img.shields.io/badge/code_style-standard-brightgreen.svg)](https://standardjs.com)
 
 ## Install
 
 ```bash
-npm install --save flip
+npm install --save @rngstudio/flip
 ```
 
 ## Usage
@@ -17,7 +17,11 @@ import { FlipProvider, FlipInitializer } from 'flip'
 
 class Example extends Component {
   render() {
-    return <MyComponent />
+    return
+    <FlipProvider partnerId="yourpartnerId" network="devnet">
+      <FlipInitializer/>
+      <MyComponent />
+    </FlipProvider>
   }
 }
 ```
