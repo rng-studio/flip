@@ -1,5 +1,5 @@
-const getPendingBet = (pendingBets, wallet, index, amount) => {
-  const pendingByAmount = pendingBets
+const getPendingBet = (pendingBets, wallet, index, amount, fourPlayer) => {
+  const pendingByAmount = pendingBets[Boolean(fourPlayer) ? 5 : 3]
     .filter(
       (bet) =>
         bet.amount.eq(amount) &&

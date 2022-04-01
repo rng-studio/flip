@@ -7,12 +7,19 @@ import _getBalance from "./getBalance";
 import collectWinnings from "./collectWinnings";
 import FlipInitializer from "./FlipInitializer";
 import getTimeCount from "./getTimeCount";
+import { Bet } from './classes/Bet';
+
+const FOUR_PLAYER_TYPE = 6;
+const TWO_PLAYER_TYPE = 3;
 
 const FlipContext = React.createContext();
 
 const defaultState = {
   bets: [],
-  pendingBets: [],
+  pendingBets: {
+    [FOUR_PLAYER_TYPE]: [],
+    [TWO_PLAYER_TYPE]: []
+  },
   balance: 0.0,
   programId: new PublicKey("E23xuZVzpEGKjiRtFjiT1BC1N3MqvZuvULXVi44uEKnN"),
   partnerId: "",
@@ -21,6 +28,7 @@ const defaultState = {
   loading: false,
   seenBets: [], //todo, we should get these from storage?
   initialLoad: true,
+  fourPlayerEnabled: false,
 };
 
 let state, dispatch;
@@ -78,7 +86,7 @@ function flipReducer(state, action) {
   }
 }
 
-function FlipProvider({ children, partnerId, network }) {
+function FlipProvider({ children, partnerId, network, fourPlayerEnabled = false }) {
   const oracleId =
     network === "mainnet-beta" || network === "mainnet"
       ? new PublicKey("H6ARHf6YXhGYeQfUzQNGk6rDNnLBQKrenN712K4AQJEG")
@@ -90,6 +98,7 @@ function FlipProvider({ children, partnerId, network }) {
     ...defaultState,
     partnerId: !partnerId ? '' : new PublicKey(partnerId),
     oracleId,
+    fourPlayerEnabled,
   });
   state = _state;
   dispatch = _dispatch;
@@ -112,8 +121,11 @@ function useBets() {
   return useFlip().state.bets;
 }
 
-function usePendingBets() {
-  return useFlip().state.pendingBets;
+function usePendingBets({ fourPlayer = false } = {}) {
+  if (fourPlayer) {
+    return useFlip().state.pendingBets[FOUR_PLAYER_TYPE] || [];
+  }
+  return useFlip().state.pendingBets[TWO_PLAYER_TYPE] || [];
 }
 
 function useBalance() {
@@ -151,20 +163,21 @@ async function updateBets(override = false) {
 async function updatePendingBets() {
   //todo: figureout how to make this into a custom hook?
   const pendingBets = await getPendingBets(state);
+  //Let's go through each.
   if (
-    getTimeCount(state.pendingBets) !== getTimeCount(pendingBets) ||
-    (state.pendingBets.length === 0 && pendingBets.length > 0)
+    getTimeCount(state.pendingBets[TWO_PLAYER_TYPE]) !== getTimeCount(pendingBets[TWO_PLAYER_TYPE]) ||
+    (state.pendingBets[TWO_PLAYER_TYPE].length === 0 && pendingBets[TWO_PLAYER_TYPE].length > 0)
   ) {
-    dispatch({ type: "setPendingBets", pendingBets });
+    dispatch({ type: "setPendingBets", pendingBets});
   }
 }
 
-async function createBet(amount) {
+async function createBet(amount, fourPlayer = false) {
   dispatch({ type: "turnOffInitialLoad" });
   const pendingBets = await getPendingBets(state);
   dispatch({ type: "startLoading" });
   try {
-    await _createBet(amount, { ...state, pendingBets });
+    await _createBet(amount, fourPlayer, { ...state, pendingBets });
     updatePendingBets(dispatch, state);
     getBalance(state, dispatch);
     dispatch({ type: "stopLoading" });
@@ -205,7 +218,7 @@ async function collect(betPubkey) {
   dispatch({ type: "stopLoading" });
 }
 
-async function getBalance() {
+async function getBalance() { 
   const balance = await _getBalance(state);
   dispatch({ type: "setBalance", balance });
 }
@@ -240,4 +253,5 @@ export {
   closeError,
   closeDisplayBet,
   FlipInitializer,
+  Bet
 };
